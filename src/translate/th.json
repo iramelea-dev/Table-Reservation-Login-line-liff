@@ -1,0 +1,9 @@
+{
+    "signup":"ลงทะเบียน",
+    "form_name":"ชื่อ - สกุล" ,
+    "form_phonenumber":"หมายเลขโทรศัพท์",
+    "form_province":"จังหวัด",
+    "form_agree": "ฉันยินยอมให้ร้านเก็บข้อมูลส่วนตัว ตามนโยบาย",
+    "form_register":"ลงทะเบียน",
+    "form_enter_placeholder":"พิมพ์.."
+}

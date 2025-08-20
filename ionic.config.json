@@ -1,0 +1,7 @@
+{
+  "name": "liff-pint-factory",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}

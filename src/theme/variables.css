@@ -1,0 +1,29 @@
+/* For information on how to create your own theme, please see:
+http://ionicframework.com/docs/theming/ */
+ 
+@import url('https://fonts.googleapis.com/css2?family=Prompt&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Kanit:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Prompt&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
+
+
+
+:root { 
+  font-size: 1em;
+  --ion-font-family:  'Poppins','Prompt', sans-serif !important;
+  --ion-font-family-base: 'Poppins','Prompt', sans-serif ;
+  --ion-font-family-ios-base:  'Poppins','Prompt', sans-serif ;
+  --ion-font-family-md-base:  'Poppins','Prompt', sans-serif ;
+  --ion-font-family-wp-base:  'Poppins','Prompt', sans-serif ;
+
+
+
+  --ion-color-primary: #1E1E1E;
+  --ion-color-primary-rgb: 9, 73, 133;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #1a1919;
+  --ion-color-primary-tint: #272525;
+}
