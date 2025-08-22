@@ -1,22 +1,63 @@
 import { CheckboxCustomEvent, IonButton, IonButtons, IonCheckbox, IonContent, IonHeader, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSearchbar, IonText, IonTitle, IonToolbar } from "@ionic/react"
 import "./css/SignUp.css"
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {  ItemProvince } from "./types";
 import { t } from "i18next";
+import liff from "@line/liff";
+import { register } from "../Api/action";
+
+liff.init({
+  liffId: "2007954701-MkOzvaX5", 
+});
 
 const SignUp=()=>{
     const [selectedProvinceText, setSelectProvinceText] = useState<string>('');
     const [selectedProvince, setSelectProvince] = useState<string[]>([]);
     const [modalProvince , setModalProvince] = useState(false)
-    const [profileurl  ,setProfileUrl] = useState("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+    const [profileurl  ,setProfileUrl] = useState<any>()
+
 
     const provinces = [
         {  id:1 ,  value:"001" ,	  label:"กรุงเทพมหานคร" ,  OFF_DESC_TH:"กท" , },
         {  id:2 ,  value:"100" ,	  label:"ชัยนาท" ,  OFF_DESC_TH:"ชน" },
     ]
 
+    const Sumbit =async () => {
+      const result = await register({
+        name: "m_name",
+        contactPhone: "m_contact_phone",
+        province: "m_province"
+      })
+      console.log(result)
+    }
     const modal = useRef<HTMLIonModalElement>(null);
+useEffect(() => {
+    const initlineliff = async () => {
+      try {
+        liff.init({
+          liffId: "2007954701-MkOzvaX5",
+        }).then(async () => {
+          if (!liff.isLoggedIn()) { await liff.login() }
+          const lineprofile = await liff.getProfile()
+          setProfileUrl(lineprofile.pictureUrl)
+          console.log(lineprofile)
 
+        }).catch((error) => { alert(JSON.stringify(error)) })
+
+
+
+        // if (!liff.isLoggedIn()) { await liff.login() }
+        // const lineprofile = await liff.getProfile()
+        // setProfileUrl(lineprofile.pictureUrl)
+
+        // console.log(lineprofile)
+      }
+      catch (error) {
+        alert(JSON.stringify(error))
+      }
+    }
+    initlineliff()
+  }, [])
     const formatData = (data: string[]) => {
         console.log("data  ",data)
         if (data.length === 1) {
@@ -68,7 +109,7 @@ const SignUp=()=>{
                     <IonCheckbox labelPlacement="end" >
                         <IonLabel style={{fontSize:".9em"}}>{t("form_agree")}</IonLabel>
                     </IonCheckbox> <br/> <br/>
-                    <IonButton mode="ios" expand="block" > 
+                    <IonButton onClick={Sumbit} expand="block" > 
                         <IonLabel>{t("form_register")}</IonLabel>
                     </IonButton> 
                 </form>
