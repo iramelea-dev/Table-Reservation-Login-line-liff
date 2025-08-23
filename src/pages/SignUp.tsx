@@ -4,102 +4,66 @@ import { useRef, useState, useEffect } from "react";
 import { ItemProvince } from "./types";
 import { t } from "i18next";
 import liff from "@line/liff";
-import { register } from "../Api/service";
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import provincesData from "../province/province.json"
-import axios from "axios";
-import api from "../Api/action";
+import { register } from "../Api/action";
 
-const SignUp = () => {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [province, setProvince] = useState("");
-  const [provinces, setProvinces] = useState<{ id: Number; value: string, label: string, off_desc_th: string }[]>([]);
-  const [selectedProvinceText, setSelectProvinceText] = useState<string>('');
-  const [selectedProvince, setSelectProvince] = useState<string[]>([]);
-  const [modalProvince, setModalProvince] = useState(false)
-  const [profileurl, setProfileUrl] = useState<any>()
-  const [agree, setAgree] = useState(false);
-  const [profile, setProfile] = useState<any>();
-  const [token, setToken] = useState<any>();
+liff.init({
+  liffId: "2007954701-MkOzvaX5", 
+});
 
-  // const provincesz = [
-  //   { id: 1, value: "กรุงเทพมหานคร", label: "กรุงเทพมหานคร", OFF_DESC_TH: "กท", },
-  //   { id: 2, value: "ชัยนาท", label: "ชัยนาท", OFF_DESC_TH: "ชน" },
-  // ]
+const SignUp=()=>{
+    const [selectedProvinceText, setSelectProvinceText] = useState<string>('');
+    const [selectedProvince, setSelectProvince] = useState<string[]>([]);
+    const [modalProvince , setModalProvince] = useState(false)
+    const [profileurl  ,setProfileUrl] = useState<any>()
 
-  // const takePicture = async () => {
-  //   const image = await Camera.getPhoto({
-  //     quality: 60,
-  //     allowEditing: true,
-  //     resultType: CameraResultType.Base64
-  //   });
-  //   const base64Data = image.base64String!;
-  //   const contentType = image.format === 'png' ? 'image/png' : 'image/jpeg';
-  //   const byteCharacters = atob(base64Data);
-  //   const byteArrays = [];
 
-  //   for
-  // }
+    const provinces = [
+        {  id:1 ,  value:"001" ,	  label:"กรุงเทพมหานคร" ,  OFF_DESC_TH:"กท" , },
+        {  id:2 ,  value:"100" ,	  label:"ชัยนาท" ,  OFF_DESC_TH:"ชน" },
+    ]
 
-  const Submit = async () => {
-  if (!profile) {
-    alert("Profile Not Found");
-    return;
-  }
-
-  const payload = {
-    name: name || profile.displayName,
-    contactPhone: phone,
-    province: province,
-    lineid: profile.userId,
-  };
-
-  console.log(" JSON :", JSON.stringify(payload, null, 2));
-
-  try {
-    const result = await register(payload);
-    console.log(" Response backend:", result.data);
-  } catch (error) {
-    console.error(" Error backend:", error);
-  }
-};
-  
-  const modal = useRef<HTMLIonModalElement>(null);
-
-  useEffect(() => {
-    setProvinces(provincesData)
-    const initLiff = async () => {
-      try {
-        await liff.init({ liffId: "2007954701-MkOzvaX5" });
-        if (!liff.isLoggedIn()) {
-          liff.login(); // redirect 
-          return;
-        }
-        const lineProfile = await liff.getProfile();
-        setToken(liff.getAccessToken());
-        console.log(liff.getAccessToken())
-        setProfile(lineProfile);
-        console.log(lineProfile)
-        setProfileUrl(lineProfile.pictureUrl)
-        setName(lineProfile.displayName);
-      } catch (error) {
-        console.error("LIFF error:", error);
-        alert("LIFF error: " + JSON.stringify(error));
-      }
-    };
-    initLiff();
-  }, []);
-  // useEffect(() = > {
-  //   setProvinces(provincesData);
-  // }, []);
-
-  const formatData = (data: string[]) => {
-    console.log("data  ", data)
-    if (data.length === 1) {
-      const provn = provinces.find((provn) => provn.value === data[0])!;
-      return provn.label;
+    const Sumbit =async () => {
+      const result = await register({
+        name: "m_name",
+        contactPhone: "m_contact_phone",
+        province: "m_province"
+      })
+      console.log(result)
     }
+    const modal = useRef<HTMLIonModalElement>(null);
+useEffect(() => {
+    const initlineliff = async () => {
+      try {
+        liff.init({
+          liffId: "2007954701-MkOzvaX5",
+        }).then(async () => {
+          if (!liff.isLoggedIn()) { await liff.login() }
+          const lineprofile = await liff.getProfile()
+          setProfileUrl(lineprofile.pictureUrl)
+          console.log(lineprofile)
+
+        }).catch((error) => { alert(JSON.stringify(error)) })
+
+
+
+        // if (!liff.isLoggedIn()) { await liff.login() }
+        // const lineprofile = await liff.getProfile()
+        // setProfileUrl(lineprofile.pictureUrl)
+
+        // console.log(lineprofile)
+      }
+      catch (error) {
+        alert(JSON.stringify(error))
+      }
+    }
+    initlineliff()
+  }, [])
+    const formatData = (data: string[]) => {
+        console.log("data  ",data)
+        if (data.length === 1) {
+            const provn = provinces.find((provn) => provn.value === data[0])!;
+            return provn.label;
+        }
 
     return `${data.length} items`;
   };
@@ -141,35 +105,34 @@ const SignUp = () => {
               <IonInput value={phone} onIonChange={(e) => setPhone(e.detail.value!)} mode="ios" placeholder={"090-000000"} type="tel"></IonInput>
             </IonLabel>
 
-            <IonLabel className="input-name" >
-              <IonText>{t("form_province")}</IonText>
-              {/* <IonInput mode="ios" placeholder="Province" value={selectedProvinceText} onClick={()=>{setModalProvince(true)}} ></IonInput> */}
-              <select value={province}
-                onChange={(e) => { setProvince(e.target.value); console.log(province) }} >
-                {provinces && provinces?.map((p) => <option value={p?.value}> {p.label} </option>)}
-              </select>
-            </IonLabel>
-            <br />
-            <br />
-            <IonCheckbox
-              checked={agree}
-              onIonChange={(e) => {
-                const value = e.detail.checked;
-                console.log("Checkbox value:", value);
-                setAgree(value);
-              }}
-              labelPlacement="end">
-              <IonLabel style={{ fontSize: ".9em" }}>{t("form_agree")}</IonLabel>
-            </IonCheckbox> <br /> <br />
-
-            <IonButton onClick={Submit} expand="block" >
-              <IonLabel>{t("form_register")}</IonLabel>
-            </IonButton>
-          </form>
-          <img src="../../assets/images/pint-factory-purple.png" style={{ height: "12rem" }} />
-        </div>
-      </IonContent>
-
+                    <IonLabel className="input-name" >
+                        <IonText>{t("form_province")}</IonText>
+                        {/* <IonInput mode="ios" placeholder="Province" value={selectedProvinceText} onClick={()=>{setModalProvince(true)}} ></IonInput> */}
+                        <select value={selectedProvinceText} >
+                            { provinces && provinces?.map((p)=> <option  value={p?.value}> {p.label} </option> )  }
+                        </select> 
+                    </IonLabel> 
+                    <br/>
+                    <br/>
+                    <IonCheckbox labelPlacement="end" >
+                        <IonLabel style={{fontSize:".9em"}}>{t("form_agree")}</IonLabel>
+                    </IonCheckbox> <br/> <br/>
+                    <IonButton onClick={Sumbit} expand="block" > 
+                        <IonLabel>{t("form_register")}</IonLabel>
+                    </IonButton> 
+                </form>
+                    <img src="../../assets/images/pint-factory-purple.png" style={{height:"12rem"}} />
+            </div>
+        </IonContent>
+        <IonModal trigger="select-fruits"  ref={modal} isOpen={modalProvince}  initialBreakpoint={.8} onIonModalDidDismiss={()=>{setModalProvince(false)}} >
+            <AppTypeahead
+                title="Favorite Fruits"
+                items={provinces}
+                selectedItems={selectedProvince}
+                onSelectionCancel={() => modal.current?.dismiss()}
+                onSelectionChange={provinceChange}
+            />
+      </IonModal>
     </IonPage>
   )
 }
