@@ -15,7 +15,7 @@ const SignUp = () => {
   const [selectedProvince, setSelectProvince] = useState<string[]>([]);
   const [modalProvince, setModalProvince] = useState(false)
   const [profileurl, setProfileUrl] = useState<any>()
-
+  const [agree, setAgree] = useState(false);
   const [profile, setProfile] = useState<any>();
 
   const provinces = [
@@ -111,15 +111,23 @@ const SignUp = () => {
               <IonText>{t("form_province")}</IonText>
               {/* <IonInput mode="ios" placeholder="Province" value={selectedProvinceText} onClick={()=>{setModalProvince(true)}} ></IonInput> */}
               <select value={province}
-                onChange={(e)  => {setProvince(e.target.value);console.log(province)}} >
+                onChange={(e) => { setProvince(e.target.value); console.log(province) }} >
                 {provinces && provinces?.map((p) => <option value={p?.value}> {p.label} </option>)}
               </select>
             </IonLabel>
             <br />
             <br />
-            <IonCheckbox labelPlacement="end" >
+            <IonCheckbox
+  checked={agree}
+  onIonChange={(e) => {
+    const value = e.detail.checked;
+    console.log("Checkbox value:", value);
+    setAgree(value);
+  }}
+  labelPlacement="end">
               <IonLabel style={{ fontSize: ".9em" }}>{t("form_agree")}</IonLabel>
             </IonCheckbox> <br /> <br />
+            
             <IonButton onClick={Submit} expand="block" >
               <IonLabel>{t("form_register")}</IonLabel>
             </IonButton>
