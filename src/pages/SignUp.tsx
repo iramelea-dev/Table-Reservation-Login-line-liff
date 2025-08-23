@@ -54,13 +54,13 @@ const SignUp = () => {
     lineid: profile.userId,
   };
 
-  console.log("📦 JSON ที่จะส่ง:", JSON.stringify(payload, null, 2));
+  console.log(" JSON:", JSON.stringify(payload, null, 2));
 
   try {
     const result = await register(payload);
-    console.log("✅ Response backend:", result.data);
+    console.log("Response backend:", result.data);
   } catch (error) {
-    console.error("❌ Error backend:", error);
+    console.error("Error backend:", error);
   }
 };
   const handleupload = async (userId: string) => {
