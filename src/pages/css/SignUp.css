@@ -38,3 +38,10 @@
     margin: .5rem 0 ;
 
 }
+.custom-select {
+  color: black; /* สีฟ้อน */
+  background-color: white; /* พื้นหลัง */
+}
+.custom-select option {
+  color: black; /* สีฟ้อนของ option */
+}

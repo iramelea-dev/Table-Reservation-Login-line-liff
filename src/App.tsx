@@ -33,6 +33,7 @@ import '@ionic/react/css/palettes/dark.system.css';
 /* Theme variables */
 import './theme/variables.css';
 import SignUp from './pages/SignUp';
+import { SelectTable } from './pages/SelectTable';
 
 setupIonicReact();
 
@@ -45,6 +46,9 @@ const App: React.FC = () => (
         </Route>
         <Route exact path="/signup">
           <SignUp />
+        </Route>
+        <Route exact path="/selecttable">
+      
         </Route>
         <Route exact path="/">
           <Redirect to="/home" />

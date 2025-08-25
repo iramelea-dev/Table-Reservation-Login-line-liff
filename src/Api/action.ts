@@ -1,14 +1,27 @@
+// action.ts
 import axios from "axios";
 
-export const api = axios.create({
-    baseURL:"http://localhost:1122"
-})
+const BASE_URL = import.meta.env.VITE_API || "http://localhost:1122";
 
-// body = body in post / get ""
-export const register = async (
-    {body}:any
-) => {
-    return await api.post("do/d1",body,{
-        headers:{Authorization:"Bearer"}
-    })
-}
+export const api = axios.create({
+  baseURL: BASE_URL,
+  timeout: 15000,
+});
+
+// ใส่ header กลาง ๆ ให้ทุก request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  // ให้แน่ใจว่า headers มีค่าเป็น object
+  config.headers = config.headers || {};
+
+  if (!config.headers["Content-Type"]) {
+    Object.assign(config.headers, { "Content-Type": "application/json" });
+  }
+
+  if (token && !config.headers["Authorization"]) {
+    Object.assign(config.headers, { Authorization: `Bearer ${token}` });
+  }
+
+  return config;
+});

@@ -1,13 +1,13 @@
+// service.ts
 import { api } from "./action";
 
-export const register = (data: any) => {
-  return api.post("/do/d1", data, {
-    headers: { "Content-Type": "application/json" },
-  });
+export const memberService = {
+  createMember: (data: any) =>
+    api.post("/members", data),
 };
 
-export const createMember = (data: any) => {
-  return api.post("/members", data, {
-    headers: { "Content-Type": "application/json" },
-  });
+export const checkService = {
+  register: (data: any) => api.post("/do/d1", data),
+  checkLineid: (usersid: string) =>
+    api.post("/do/check", { lineid: usersid }),
 };

@@ -1,15 +1,18 @@
-import { CheckboxCustomEvent, IonButton, IonButtons, IonCheckbox, IonContent, IonHeader, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSearchbar, IonText, IonTitle, IonToolbar } from "@ionic/react"
+import {
+  CheckboxCustomEvent, IonButton, IonButtons, IonCheckbox, IonContent, IonHeader, IonInput,
+  IonItem, IonLabel, IonList, IonModal, IonPage, IonSearchbar, IonText, IonTitle, IonToolbar, useIonRouter
+} from "@ionic/react"
 import "./css/SignUp.css"
 import { useRef, useState, useEffect } from "react";
 import { ItemProvince } from "./types";
 import { t } from "i18next";
 import liff from "@line/liff";
-import { register } from "../Api/service";
+import { checkService } from "../Api/service";
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import provincesData from "../province/province.json"
 import axios from "axios";
 
-const SignUp = () => {
+export const SignUp = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [province, setProvince] = useState("");
@@ -20,6 +23,9 @@ const SignUp = () => {
   const [profileurl, setProfileUrl] = useState<any>()
   const [agree, setAgree] = useState(false);
   const [profile, setProfile] = useState<any>();
+  const [linetoken, setLinetoken] = useState<any>();
+  const [toast, setToast] = useState<{ open: Boolean, msg: string }>({ open: false, msg: "" })
+
 
 
   // const provincesz = [
@@ -42,74 +48,89 @@ const SignUp = () => {
   // }
 
   const Submit = async () => {
-  if (!profile) {
-    alert("Profile Not Found");
-    return;
-  }
+    if (!profile) {
+      alert("Profile Not Found");
+      return;
+    }
 
-  const payload = {
-    name: name || profile.displayName,
-    contactPhone: phone,
-    province: province,
-    lineid: profile.userId,
-  };
+    const check = await checkService.checkLineid(profile.userId);
+    if (check.data.exists) {
+      alert("LINE ALREADY WAWAWA")
+      return;
+    }
 
-  console.log(" JSON:", JSON.stringify(payload, null, 2));
 
-  try {
-    const result = await register(payload);
-    console.log("Response backend:", result.data);
-  } catch (error) {
-    console.error("Error backend:", error);
-  }
-};
-  const handleupload = async (userId: string) => {
+    const payload = {
+      name: name || profile.displayName,
+      contactPhone: phone,
+      province: province,
+      lineid: profile.userId,
+    };
+
+    console.log(" JSON:", JSON.stringify(payload, null, 2));
+
     try {
-      const photo = await Camera.getPhoto({
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Prompt,
-        quality: 70,
-      });
-      const res = await axios.post(
-        "http://localhost:8080/do/uploadImage"
-        , {
-          userId,
-          imageBase64: photo.base64String,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      console.log("Upload suscues", res.data);
-    } catch (err) {
-      console.error("Upload Fail", err)
+
+      const result = await checkService.register(payload);
+      console.log("Response backend:", result.data);
+      alert("SAVE!!!" + result.data.message);
+
+    } catch (err: any) {
+      console.error("Error backend:", + (err.response?.data || err.message));
+      alert("Can't Save!!!" + (err.response?.data || err.message));
+
     }
   };
+
   const modal = useRef<HTMLIonModalElement>(null);
 
+  const router = useIonRouter();
+
   useEffect(() => {
-    setProvinces(provincesData)
+    setProvinces(provincesData);
+
     const initLiff = async () => {
       try {
+
         await liff.init({ liffId: "2007954701-MkOzvaX5" });
+
+
         if (!liff.isLoggedIn()) {
-          liff.login(); // redirect 
+          liff.login();
           return;
         }
+
+
         const lineProfile = await liff.getProfile();
         setProfile(lineProfile);
-        console.log(lineProfile)
-        setProfileUrl(lineProfile.pictureUrl)
+        console.log("JSON LINE :", lineProfile);
+
+
+        const checkRes = await checkService.checkLineid(lineProfile.userId);
+
+        if (checkRes.data.exists) {
+          alert("LINE ID IS ALREADY: " + checkRes.data.message);
+          router.push("/", "back", "replace");
+          return;
+        }  
+
+
+        const token = liff.getAccessToken();
+        setLinetoken(token);
+        console.log("Line token:", token);
+
+        setProfileUrl(lineProfile.pictureUrl);
         setName(lineProfile.displayName);
+
       } catch (error) {
         console.error("LIFF error:", error);
         alert("LIFF error: " + JSON.stringify(error));
       }
     };
+
     initLiff();
   }, []);
+
   // useEffect(() = > {
   //   setProvinces(provincesData);
   // }, []);
@@ -161,12 +182,23 @@ const SignUp = () => {
               <IonInput value={phone} onIonChange={(e) => setPhone(e.detail.value!)} mode="ios" placeholder={"090-000000"} type="tel"></IonInput>
             </IonLabel>
 
-            <IonLabel className="input-name" >
+            <IonLabel className="input-province" >
               <IonText>{t("form_province")}</IonText>
               {/* <IonInput mode="ios" placeholder="Province" value={selectedProvinceText} onClick={()=>{setModalProvince(true)}} ></IonInput> */}
-              <select value={province}
-                onChange={(e) => { setProvince(e.target.value); console.log(province) }} >
-                {provinces && provinces?.map((p) => <option value={p?.value}> {p.label} </option>)}
+              <select
+                className="custom-select"
+                value={province}
+                onChange={(e) => {
+                  setProvince(e.target.value);
+                  console.log("selected:", e.target.value);
+                }}
+              >
+                <option value="">-- เลือกจังหวัด --</option>
+                {provinces.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
               </select>
             </IonLabel>
             <br />
@@ -182,7 +214,7 @@ const SignUp = () => {
               <IonLabel style={{ fontSize: ".9em" }}>{t("form_agree")}</IonLabel>
             </IonCheckbox> <br /> <br />
 
-            <IonButton onClick={Submit} expand="block" >
+            <IonButton onClick={Submit} expand="block" disabled={!agree} routerLink="/home">
               <IonLabel>{t("form_register")}</IonLabel>
             </IonButton>
           </form>
@@ -195,7 +227,6 @@ const SignUp = () => {
 }
 
 export default SignUp;
-
 
 
 
