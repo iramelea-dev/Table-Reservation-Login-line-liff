@@ -33,8 +33,7 @@ import '@ionic/react/css/palettes/dark.system.css';
 /* Theme variables */
 import './theme/variables.css';
 import SignUp from './pages/SignUp';
-import { SelectTable } from './pages/SelectTable';
-
+import SelectTable from './pages/SelectTable';
 setupIonicReact();
 
 const App: React.FC = () => (
@@ -48,7 +47,7 @@ const App: React.FC = () => (
           <SignUp />
         </Route>
         <Route exact path="/selecttable">
-      
+          <SelectTable/>
         </Route>
         <Route exact path="/">
           <Redirect to="/home" />
