@@ -6,7 +6,6 @@ import {
   IonTextarea, IonFooter
 } from "@ionic/react";
 
-type Tabletype = "บาร์" | "นักร้อง"
 type Zone = "A" | "B";
 type Status = "ว่าง" | "จองแล้ว" | "ไม่ว่าง";
 
@@ -21,6 +20,8 @@ interface TableNode {
   x: number;
   y: number;
 }
+
+// ---------- helpers ----------
 const uid = () => Math.random().toString(36).slice(2, 9);
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 
@@ -289,10 +290,10 @@ export const SelectTable = () => {
         </div>
 
         {/* Editor Modal */}
-    </IonContent>
-      </IonPage>
-      
-
+        
+        
+      </IonContent>
+    </IonPage>
   );
 }
 
