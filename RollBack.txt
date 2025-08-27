@@ -1,0 +1,50 @@
+{shown.map((t) => {
+              const colors = statusColor[t.status];
+              return (
+                <div
+                  key={t.id}
+                  role="button"
+                  // node
+                  onPointerDown={(e) => onPointerDownNode(e, t)}
+                  onClick={(e) => {
+
+                    e.stopPropagation();
+                    setSelected(t);
+                  }}
+                  title={t.label}
+                  style={{
+                    position: "absolute",
+                    left: `${t.x * 100}%`,
+                    top: `${t.y * 100}%`,
+                    transform: "translate(-50%, -50%)",
+                    borderRadius: 16,
+                    border: `1px solid ${colors.border}`,
+                    padding: "8px 12px",
+                    background: colors.bg,
+                    color: "#e2e8f0",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
+                    textAlign: "left",
+                    width: 120,
+                    // กันเลือกตัวอักษร/gesture แปลก ๆ ตอนลาก
+                    touchAction: "none",
+                    userSelect: "none",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", position: "relative", fontWeight: 700, color: "#fff" }}>
+                    <IonLabel style={{ position: "absolute" }}> {t.label} </IonLabel>
+
+                    <IonImg src={PIC[key]} style={{ width: 180, height: "auto" }} />
+
+                  </div>
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>
+                    Zone {t.zone} · {t.seats} seats
+                  </div>
+                  {t.desc && (
+                    <div style={{ fontSize: 10, opacity: 0.7, marginTop: 4, maxWidth: 160 }}>
+                      {t.desc}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
