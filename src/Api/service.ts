@@ -1,4 +1,3 @@
-// service.ts
 import { api } from "./action";
 
 export const memberService = {
