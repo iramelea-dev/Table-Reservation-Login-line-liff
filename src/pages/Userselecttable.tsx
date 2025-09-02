@@ -1,10 +1,11 @@
-// src/pages/UserSelectTable.tsx
 import React, { useMemo, useRef, useState } from "react";
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-  IonSegment, IonSegmentButton, IonLabel,
-  IonItem, IonInput, IonTextarea, IonModal, IonButton, IonToast,
+  IonButtons, IonButton, IonSegment, IonSegmentButton, IonLabel,
+  IonChip, IonModal, IonItem, IonInput, IonSelect, IonSelectOption,
+  IonTextarea, IonFooter, IonToast, useIonAlert, IonIcon,
 } from "@ionic/react";
+import { personCircleOutline, chevronBack } from "ionicons/icons";
 
 type Tabletype = "SMALL" | "MEDIUM" | "LARGE";
 type Zone = "A" | "B";
@@ -32,7 +33,7 @@ const statusColor: Record<Status, { color: string; bg: string; border: string }>
   ไม่ว่าง: { color: "#f43f5e", bg: "rgba(244,63,94,0.15)", border: "rgba(251,113,133,0.4)" },
 };
 
-// seed ตารางตัวอย่าง (ไม่ต้องพึ่งหน้า Staff)
+// ตารางตัวอย่าง 
 const seedTables: TableNode[] = [
   { id: guid(), label: "A1", zone: "A", seats: 4, status: "ว่าง", x: 0.22, y: 0.32, size: "MEDIUM", shape: "Square" },
   { id: guid(), label: "A2", zone: "A", seats: 2, status: "จองแล้ว", x: 0.38, y: 0.32, size: "SMALL", shape: "Square" },
@@ -43,14 +44,17 @@ const UserSelectTable: React.FC = () => {
   const [zonefilter, setZoneFilter] = useState<Zone | "ALL">("ALL");
   const [tables, setTables] = useState<TableNode[]>(seedTables);
   const [selected, setSelected] = useState<TableNode | null>(null);
-
+  const [selectMode, setSelectMode] = useState(false);
+  const [savedTables, setSavedTables] = useState<TableNode[]>(seedTables);
+  const [joinSelection, setJoinSelection] = useState<Set<string>>(new Set()); // id reservation
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [time, setTime] = useState("");
   const [note, setNote] = useState("");
   const [toastMsg, setToastMsg] = useState("");
-
+  const [dirty, setDirty] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [showMeta, setShowMeta] = useState(true);
 
   const shown = useMemo(
     () => tables.filter((t) => (zonefilter === "ALL" ? true : t.zone === zonefilter)),
@@ -63,23 +67,54 @@ const UserSelectTable: React.FC = () => {
       setToastMsg("กรอกชื่อ/โทร/เวลา ให้ครบก่อนจอง");
       return;
     }
-    // เปลี่ยนสถานะในหน้า (prototype)
     setTables((prev) => prev.map((t) => (t.id === selected.id ? { ...t, status: "จองแล้ว" } : t)));
     setSelected(null);
     setName(""); setPhone(""); setTime(""); setNote("");
     setToastMsg("จองสำเร็จ (Prototype)");
+    setDirty(true);
+   
   };
+  const enterSelectMode = () => {
+      setTables(JSON.parse(JSON.stringify(savedTables)));
+      setSelectMode(true);
+      setJoinSelection(new Set());
+    };
+    const cancelChanges = () => {
+      setTables(JSON.parse(JSON.stringify(savedTables)));
+      setSelectMode(false);
+      setJoinSelection(new Set());
+    }
+    const saveChanges = () => {
+      setTables(JSON.parse(JSON.stringify(savedTables)))
+      setSelectMode(false);
+      setJoinSelection(new Set());
+    }
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
           <IonTitle>เลือกโต๊ะ (Prototype)</IonTitle>
+          <IonButtons slot="end">
+            {!selectMode ? (
+              <IonButton onClick={enterSelectMode}>Select</IonButton>
+            ) : ( 
+              <>
+                                  <IonButton color="medium" onClick={cancelChanges}>Cancel</IonButton>
+              </>
+            )}
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
       <IonContent>
         <IonSegment value={zonefilter} onIonChange={(e) => setZoneFilter((e.detail.value as any) ?? "ALL")}>
+          <IonChip
+                      color={showMeta ? "tertiary" : "medium"}
+                      onClick={() => setShowMeta(v => !v)}
+                    >
+                      คำอธิบายใต้โต๊ะ: {showMeta ? "On" : "Off"}
+                    </IonChip>
           <IonSegmentButton value="ALL"><IonLabel>ทั้งหมด</IonLabel></IonSegmentButton>
           <IonSegmentButton value="A"><IonLabel>Zone A</IonLabel></IonSegmentButton>
           <IonSegmentButton value="B"><IonLabel>Zone B</IonLabel></IonSegmentButton>
@@ -110,15 +145,57 @@ const UserSelectTable: React.FC = () => {
                 border: `1px solid ${statusColor[t.status].border}`,
                 borderRadius: 25,
                 padding: "8px 12px",
-                cursor: t.status === "ว่าง" ? "pointer" : "not-allowed",
+                cursor: selectMode 
+                ? (t.status === "ว่าง" ? "pointer" : "not-allowed")
+                : "not-allowed",
                 color: "#fff",
                 fontWeight: 700,
               }}
-              onClick={() => t.status === "ว่าง" && setSelected(t)}
-              title={`${t.label} (${t.status})`}
+              onClick={()  => {
+                if (!selectMode) {
+                  setToastMsg("Hit Select Button First");
+                  return;
+                }
+              if (t.status === "ว่าง") setSelected(t);
+            }}
+              title={!selectMode 
+                ? " HIT Select First "
+                : `${t.label} (${t.status})`}
             >
               {t.label}
+                 {showMeta && (
+                                 <div
+                                   style={{
+                                     position: "absolute",
+                                     bottom: -20,
+                                     left: "50%",
+                                     transform: "translateX(-50%)",
+                                     display: "flex",
+                                     alignItems: "center",
+                                     gap: 6,
+                                     fontSize: 12,
+                                     lineHeight: 1,
+                                     padding: "3px 8px",
+                                     borderRadius: 9999,
+                                     background: "rgba(0,0,0,0.35)",
+                                     border: "1px solid rgba(255,255,255,0.15)",
+                                     minWidth: "1rem",
+                                     whiteSpace: "nowrap",
+                                     overflow: "hidden",
+                                     textOverflow: "ellipsis",
+                                   }}
+                                 >
+                                   <IonIcon icon={personCircleOutline} />
+                                   <span>{t.seats}</span>
+                                   {t.desc?.trim() ? (
+                                     <span style={{ opacity: 0.85 }}>
+                                       • {t.desc}
+                                     </span>
+                                   ) : null}
+                                 </div>
+                               )}
             </div>
+            
           ))}
         </div>
 
@@ -132,19 +209,33 @@ const UserSelectTable: React.FC = () => {
             <IonItem><IonLabel position="stacked">เบอร์โทร</IonLabel>
               <IonInput type="tel" value={phone} onIonChange={(e) => setPhone(e.detail.value!)} />
             </IonItem>
+            
             <IonItem><IonLabel position="stacked">เวลา</IonLabel>
               <IonInput type="time" value={time} onIonChange={(e) => setTime(e.detail.value!)} />
             </IonItem>
             <IonItem><IonLabel position="stacked">หมายเหตุ</IonLabel>
               <IonTextarea value={note} onIonChange={(e) => setNote(e.detail.value!)} />
             </IonItem>
-
+             <IonItem>
+      <IonLabel position="stacked">จำนวนที่นั่ง</IonLabel>
+      <IonInput
+        type="number"
+        inputMode="numeric"
+        value={String(selected?.seats ?? 0)}
+        onIonChange={(e) => {
+          const v = parseInt(e.detail.value || "0", 10);
+          if (selected) {
+            setSelected({ ...selected, seats: Math.max(1, v) });
+          }
+        }}
+      />
+    </IonItem>
             <IonButton expand="block" color="success" onClick={handleBooking}>ยืนยันการจอง</IonButton>
             <IonButton expand="block" fill="outline" onClick={() => setSelected(null)}>ยกเลิก</IonButton>
           </IonContent>
         </IonModal>
 
-        <IonToast isOpen={!!toastMsg} duration={1800} message={toastMsg} onDidDismiss={() => setToastMsg("")}/>
+        <IonToast isOpen={!!toastMsg} duration={1800} message={toastMsg} onDidDismiss={() => setToastMsg("")} />
       </IonContent>
     </IonPage>
   );
