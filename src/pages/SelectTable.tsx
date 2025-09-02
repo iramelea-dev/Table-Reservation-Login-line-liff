@@ -3,9 +3,9 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
   IonButtons, IonButton, IonSegment, IonSegmentButton, IonLabel,
   IonChip, IonModal, IonItem, IonInput, IonSelect, IonSelectOption,
-  IonTextarea, IonFooter, IonToast, useIonAlert, IonIcon, 
+  IonTextarea, IonFooter, IonToast, useIonAlert, IonPopover, IonIcon
 } from "@ionic/react";
-import { personCircleOutline, chevronBack } from "ionicons/icons";
+import {informationCircle, personCircle, personCircleOutline} from "ionicons/icons"
 
 // Type เก็บของ
 type Tabletype = "SMALL" | "MEDIUM" | "LARGE";
@@ -28,14 +28,10 @@ interface TableNode {
   status: Status;
   x: number; 
   y: number; 
-  // ขนาดโต๊ะ
   size: Tabletype;
   shape: Tableshape;
-  sizeRatio: number; 
-  // รวมโต๊ะ
-  isGroup?: boolean;           
-  groupId?: string;
-  members?: TableNode[];       // Snapshot table
+  sizeRatio: number; //  container
+  groupId?: string;  // กลุ่ม
 }
 
 interface ObjectNode {
@@ -96,9 +92,11 @@ const Selecttable: React.FC = () => {
   const [selected, setSelected] = useState<TableNode | ObjectNode | null>(null);
   const [adding, setAdding] = useState<Adding>(null);
   const [toastMsg, setToastMsg] = useState("");
+
   const [joinMode, setJoinMode] = useState(false);
-  const [joinSelection, setJoinSelection] = useState<Set<string>>(new Set()); // id ของโต๊ะ
-  const [showDescUnderNode, setShowDescUnderNode] = useState(true);
+  const [joinSelection, setJoinSelection] = useState<Set<string>>(new Set()); // id ของ โต๊ะ
+
+  // canvas/drag
   const containerRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLIonContentElement | null>(null);
   const dragInfo = useRef<{ id: string; type: "table" | "object"; offsetX: number; offsetY: number } | null>(null);
@@ -106,6 +104,7 @@ const Selecttable: React.FC = () => {
   const [showMeta, setShowMeta] = useState(true);
   const modalRef = useRef<HTMLIonModalElement>(null);
 
+  // ตารางที่แสดง (ตาม filter) 
   const shownTables = useMemo(
     () => tables
       .filter((t) => (zonefilter === "ALL" ? true : t.zone === zonefilter))
@@ -174,6 +173,7 @@ const Selecttable: React.FC = () => {
     setToastMsg("บันทึกสำเร็จ");
   };
 
+  // Add node by clicking on canvas 
   const handlePlanClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current || !adding || !editMode) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -193,6 +193,7 @@ const Selecttable: React.FC = () => {
     setDirty(true);
   };
 
+ 
   const togglePick = (id: string) => {
     setJoinSelection(prev => {
       const next = new Set(prev);
@@ -201,61 +202,17 @@ const Selecttable: React.FC = () => {
     });
   };
 
+  /** รวมโต๊ะ: สร้างโหนดกรุ๊ป (แทนโต๊ะเดิม) */
   const confirmJoin = () => {
     if (joinSelection.size < 2) return;
-
-    const ids = Array.from(joinSelection);
-    const members = tables.filter(t => ids.includes(t.id)); // > เลือกโต๊ะ
-    const sumX = members.reduce((s, m) => s + m.x, 0); // > plan
-    const sumY = members.reduce((s, m) => s + m.y, 0);
-    const cx = clamp01(sumX / members.length);
-    const cy = clamp01(sumY / members.length);
-
-    const zone = members[0]?.zone ?? "A"; // เอาโซนของตัวแรก
-    const seats = members.reduce((s, m) => s + m.seats, 0);
-    const status: Status = members.every(m => m.status === "ว่าง") ? "ว่าง" : "จองแล้ว";
-    const sizeRatio = Math.max(...members.map(m => m.sizeRatio ?? TABLE_VISUAL.MEDIUM));
-
-    const groupNode: TableNode = {
-      id: guid(),
-      label: `G${Math.floor(Math.random() * 900 + 100)}`, // label กรุ๊ป
-      desc: `รวม: ${members.map(m => m.label).join(", ")}`,
-      zone,
-      size: "LARGE",
-      seats,
-      status,
-      x: cx,
-      y: cy,
-      shape: "Square",
-      sizeRatio,
-      isGroup: true,
-      members: JSON.parse(JSON.stringify(members)), // snapshot เดิม
-    };
-
- 
-    setTables(prev => prev.filter(t => !ids.includes(t.id)).concat(groupNode));
-
+    const newGroupId = guid();
+    const updatedtable = tables.map(t => (joinSelection.has(t.id) ? { ...t, groupId: newGroupId } : t));
+    setTables(updatedtable)
+    console.log(updatedtable)
     setDirty(true);
     setJoinMode(false);
     setJoinSelection(new Set());
-    setToastMsg("รวมโต๊ะเป็นกรุ๊ปแล้ว");
-  };
-
-  const splitSelectedGroup = () => {
-    if (!selected || !("zone" in selected)) return;
-    const node = selected as TableNode;
-    if (!node.isGroup || !node.members || node.members.length === 0) return;
-
-    // เอาโต๊ะเดิมกลับมา ลบโหนดกรุ๊ป
-    setTables(prev =>
-      prev
-        .filter(t => t.id !== node.id)   // ลบ group
-        .concat(node.members!)           // ใส่โต๊ะเดิมคืน
-    );
-
-    setSelected(null);
-    setDirty(true);
-    setToastMsg("แยกโต๊ะออกจากกรุ๊ปแล้ว");
+    setToastMsg("ต่อโต๊ะรวมกลุ่มแล้ว");
   };
 
   // Drag node
@@ -297,7 +254,7 @@ const Selecttable: React.FC = () => {
     e.preventDefault();
   };
 
-  // >>> open modal
+  // >>> Modal 
   const updateSelected = (partial: Partial<TableNode & ObjectNode>) => {
     if (!selected) return;
     if ("zone" in selected) {
@@ -386,19 +343,6 @@ const Selecttable: React.FC = () => {
           <IonChip color="success" onClick={() => setAvailableOnly((v) => !v)}>
             แสดงเฉพาะว่าง: {availableOnly ? "On" : "Off"}
           </IonChip>
-          {/* <IonChip
-            color={showDescUnderNode ? "tertiary" : "medium"}
-            onClick={() => setShowDescUnderNode(v => !v)}
-          >
-            คำอธิบายใต้โนด: {showDescUnderNode ? "On" : "Off"}
-          </IonChip> */}
-          <IonChip
-            color={showMeta ? "tertiary" : "medium"}
-            onClick={() => setShowMeta(v => !v)}
-          >
-            คำอธิบายใต้โต๊ะ: {showMeta ? "On" : "Off"}
-          </IonChip>
-
           <IonChip color={editMode ? "warning" : "medium"}>
             {editMode ? (dirty ? "มีการเปลี่ยนแปลง" : "โหมดแก้ไข") : "โหมดดูผัง"}
           </IonChip>
@@ -444,6 +388,7 @@ const Selecttable: React.FC = () => {
             backgroundSize: "32px 32px, 32px 32px",
           }}
         >
+          {/* Objects (ไม่ยุ่งกับ join) */}
           {objects.map((o) => (
             <div
               key={o.id}
@@ -475,6 +420,7 @@ const Selecttable: React.FC = () => {
             </div>
           ))}
 
+          {/* Tables (รองรับ join) */}
           {shownTables.map((t) => {
             const c = statusColor[t.status];
             const sidePct = t.sizeRatio * 100;
@@ -498,78 +444,33 @@ const Selecttable: React.FC = () => {
                   left: `${t.x * 100}%`,
                   top: `${t.y * 100}%`,
                   transform: "translate(-50%, -50%)",
-
-                  
                   width: `${sidePct}%`,
-                  aspectRatio: "1 / 1",
-                  boxSizing: "border-box",
+                  height: `${sidePct}%`,
                   borderRadius: isCircle ? "50%" : 12,
-
                   border: picked ? `2px dashed ${c.border}` : `1px solid ${c.border}`,
                   boxShadow: inGroup ? "0 0 0 2px rgba(59,130,246,0.35)" : "0 2px 8px rgba(0,0,0,0.35)",
                   background: c.bg,
                   color: "#e2e8f0",
+
+                  // อื่น ๆ
                   cursor: editMode ? "grab" : "default",
                   fontWeight: 700,
                   userSelect: "none",
                   touchAction: "none",
                   opacity: editMode ? 1 : 0.95,
-                  display: "block",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              >
-               
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 8,
-                    textAlign: "center",
-                  }}
-                >
-              
-                  <div>{t.label}</div>
-
-                 
-                  {showMeta && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: -20,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        fontSize: 12,
-                        lineHeight: 1,
-                        padding: "3px 8px",
-                        borderRadius: 9999,
-                        background: "rgba(0,0,0,0.35)",
-                        border: "1px solid rgba(255,255,255,0.15)",
-                        minWidth: "1rem",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      <IonIcon icon={personCircleOutline} />
-                      <span>{t.seats}</span>
-                      {t.desc?.trim() ? (
-                        <span style={{ opacity: 0.85 }}>
-                          • {t.desc}
-                        </span>
-                      ) : null}
-                    </div>
-                  )}
+              ><div style={{ position: "relative", width: "100%", height: "100%", display: "flex", justifyContent:"center", alignItems: "center"}}>
+                <div style= {{ position: "absolute" , bottom: "-100%", width: "100%", height: "100%" , display: "flex", justifyContent: "center", alignItems: "center"}}>
+                 <IonIcon icon={personCircleOutline}></IonIcon> &nbsp; {t.seats}
+                </div>
+                {t.label}
                 </div>
               </div>
             );
           })}
-
-
 
           {editMode && adding && (
             <div
