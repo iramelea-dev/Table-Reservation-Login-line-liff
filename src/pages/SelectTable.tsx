@@ -12,7 +12,7 @@ type Zone = "A" | "B";
 type Status = "ว่าง" | "จองแล้ว" | "ไม่ว่าง";
 type Tableshape = "Square" | "Circle";
 type ObjectType = "Stage" | "Screen";
-
+type Orientation = "landscape" | "portrait"
 type Adding =
   | { kind: "table"; zone: Zone; size: Tabletype }
   | { kind: "object"; objectType: ObjectType }
@@ -45,6 +45,7 @@ interface ObjectNode {
   width: number;
   height: number;
   color: string;
+  orientation?: Orientation;
 }
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
@@ -82,8 +83,8 @@ const seedTables: TableNode[] = [
 
 
 const seedObjects: ObjectNode[] = [
-  { id: guid(), label: "Stage", type: "Stage", x: 0.50, y: 0.12, width: 0.40, height: 0.12, color: "#f59e0b" },
-  { id: guid(), label: "Screen", type: "Screen", x: 0.85, y: 0.18, width: 0.12, height: 0.08, color: "#34d399" },
+  { id: guid(), label: "Stage", type: "Stage", x: 0.50, y: 0.12, width: 0.40, height: 0.12, color: "#f59e0b", orientation: "landscape" },
+  { id: guid(), label: "Screen", type: "Screen", x: 0.85, y: 0.18, width: 0.12, height: 0.08, color: "#34d399", orientation: "landscape" },
 ];
 
 
@@ -139,7 +140,13 @@ const Selecttable: React.FC = () => {
 
   const makeObjectNode = (type: ObjectType, x: number, y: number): ObjectNode => {
     const d = DEFAULT_OBJECT_SIZE[type];
-    return { id: guid(), label: d.label, type, x, y, width: d.w, height: d.h, color: d.color };
+    return { id: guid(), label: d.label, type, x, y, width: d.w, height: d.h, color: d.color, orientation: 'landscape' };
+  };
+
+  const normalizeDeg = (deg: number) => {
+    // ให้เหลือช่วง 0..359
+    const n = Math.round(deg) % 360;
+    return n < 0 ? n + 360 : n;
   };
 
 
@@ -343,11 +350,14 @@ const Selecttable: React.FC = () => {
       setSelected(merged);
     } else {
       const merged = { ...selected, ...partial } as ObjectNode;
+
       if (merged.width !== undefined) merged.width = clamp01(merged.width);
       if (merged.height !== undefined) merged.height = clamp01(merged.height);
+
       setObjects((prev) => prev.map((n) => (n.id === merged.id ? merged : n)));
       setSelected(merged);
     }
+
     setDirty(true);
   };
 
@@ -489,7 +499,8 @@ const Selecttable: React.FC = () => {
                 top: `${o.y * 100}%`,
                 width: `${o.width * 100}%`,
                 height: `${o.height * 100}%`,
-                transform: "translate(-50%, -50%)",
+                transform: `translate(-50%, -50%) ${o.orientation === "portrait" ? "rotate(90deg)" : ""}`,
+
                 background: o.color,
                 borderRadius: 8,
                 boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
@@ -745,6 +756,19 @@ const Selecttable: React.FC = () => {
                     onIonChange={(e) => updateSelected({ height: parseFloat(e.detail.value || "0.1") })}
                   />
                 </IonItem>
+                {/* ---- ในส่วน Object (selected ไม่มี "zone") ---- */}
+
+                <IonButton color="warning"
+                  size="small"
+                  onClick={() => {
+                    const cur = (selected as ObjectNode).orientation ?? "landscape";
+                    updateSelected({ orientation: cur === "landscape" ? "portrait" : "landscape" });
+                  }}
+                >
+                  สลับแนว
+                </IonButton>
+
+
               </>
             ) : null}
 
