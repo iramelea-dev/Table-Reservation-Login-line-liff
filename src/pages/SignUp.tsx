@@ -26,13 +26,6 @@ export const SignUp = () => {
   const [linetoken, setLinetoken] = useState<any>();
   const [toast, setToast] = useState<{ open: Boolean, msg: string }>({ open: false, msg: "" })
 
-
-
-  // const provincesz = [
-  //   { id: 1, value: "กรุงเทพมหานคร", label: "กรุงเทพมหานคร", OFF_DESC_TH: "กท", },
-  //   { id: 2, value: "ชัยนาท", label: "ชัยนาท", OFF_DESC_TH: "ชน" },
-  // ]
-
   // const takePicture = async () => {
   //   const image = await Camera.getPhoto({
   //     quality: 60,
@@ -193,7 +186,7 @@ export const SignUp = () => {
                   console.log("selected:", e.target.value);
                 }}
               >
-                <option value="">-- เลือกจังหวัด --</option>
+                <option value=""> Province </option>
                 {provinces.map((p) => (
                   <option key={p.value} value={p.value}>
                     {p.label}
@@ -218,7 +211,6 @@ export const SignUp = () => {
               <IonLabel>{t("form_register")}</IonLabel>
             </IonButton>
           </form>
-          <img src="../../assets/images/pint-factory-purple.png" style={{ height: "12rem" }} />
         </div>
       </IonContent>
 
